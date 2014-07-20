@@ -35,9 +35,71 @@ public class ConsoleClient
         client.configureSource();
         client.configureTarget();
         
-        client.cloneMagic(); // Execute the magic functionsys
+        client.cloneMagic(); // Execute the magic functions
+    }
+    
+    /**
+     * Shows a menu asking to user his database provider.
+     * @return
+     */
+    private String askDBProvider()
+    {
+        int option = -1;
+        do
+        {
+            System.out.println("\nPLEASE SELECT A SUPPORTED DATABASE PROVIDER: ");
+            System.out.println(" ** 1. Oracle");
+            System.out.println(" ** 2. MySQL");
+            System.out.println(" ** 3. HSQLDB");
+            System.out.print("Select: ");
+            
+            String selection = scanner.next();
+            try 
+            {
+                option = Integer.parseInt(selection);
+                if( !(option>=1) && !(option<=3) )
+                {
+                    option = -1;
+                }
+            } 
+            catch(Exception err) { }
+        }while(option == -1);
         
-        System.out.println("\nHAPPY CODING !! ... BYE");
+        switch(option)
+        {
+            case 1: return "ORACLE";
+            case 2: return "MySQL";
+            case 3: return "HSQLDB";
+            default: return "";
+        }
+    }
+    
+    /**
+     * Ask for host, port, database, user and password for and database.
+     * 
+     * @return a String array [host, port, database, user, pass]
+     */
+    private String[] askConnParams()
+    {
+        System.out.println("Please provide required parameters ... ");
+        
+        System.out.print("** Database host: ");
+        final String host = scanner.nextLine();
+        
+        System.out.print("** Database port: ");
+        final String port = scanner.nextLine();
+        
+        System.out.print("** Database name: ");
+        final String dbName = scanner.nextLine();
+        
+        System.out.print("** Database username: ");
+        final String username = scanner.nextLine();
+        
+        System.out.print("** Database password: ");
+        final String pass = scanner.nextLine();
+        
+        final String[] params = {host, port, dbName, username, pass};
+        return params;
     }
     
     /**
@@ -47,11 +109,60 @@ public class ConsoleClient
      */
     private void cloneMagic() 
     {
-    	System.out.println("\nTables in Source Database: ");
-		for(String tableName : jdbCloner.getTablesNames(jTemplateSource))
-		{
-			System.out.println(" * " + tableName);
-		}
+    	do
+    	{
+    	    System.out.println("\n\n*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
+    	    System.out.println("\nSELECT ONE FUNCTION FROM JDBCLONER");
+    	    System.out.println(" 0. Exit JDBCloner");
+    	    System.out.println(" 1. Show tables in Source/Origin database");
+    	    System.out.println(" 2. Show tables in Target/Destine database");
+    	    System.out.println(" 3. Copy single table structure [Origin to Target]");
+    	    System.out.println(" 4. Copy single table structure AND ROWS [Origin to Target]");
+    	    System.out.println(" 5. Copy rows from one table [Origin] to another in Destine [Target]");
+    	    
+    	    
+    	    System.out.print("Select: ");
+    	    switch(scanner.nextInt())
+    	    {
+    	        case 0:
+    	            System.out.println("\nHAPPY CODING !! ... BYE");
+    	            System.exit(0);
+    	            break;
+    	        case 1:
+    	            showTables(jTemplateSource);
+    	            break;
+    	        case 2:
+    	            showTables(jTemplateTarget);
+    	            break;
+    	        case 3:
+    	            System.out.print("Origin table name: ");
+    	            String sourceTableName = scanner.next();
+    	            
+    	            System.out.print("Target table name: ");
+                    String targetTableName = scanner.next();
+                    
+    	            jdbCloner.cloneTable(sourceTableName, targetTableName, jTemplateSource, jTemplateTarget);
+    	            break;
+    	        case 5:
+    	            System.out.println("\nWARNING: Please ensure that both origin and target "
+    	                    + "tables has same structure to avoid conflicts");
+    	            
+    	            System.out.print("Origin table name: ");
+    	            String sourceTable = scanner.next();
+    	            
+    	            System.out.print("Target table name: ");
+    	            String targetTable = scanner.next();
+    	            
+    	            jdbCloner.cloneRows(sourceTable, targetTable, jTemplateSource, jTemplateTarget);
+    	            break;
+    	        default:
+    	            System.out.println("Please select a valid option.");
+    	    }
+    	    
+    	    System.out.print("[TYPE A CHAR AND ENTER TO CONTINUE]");
+    	    scanner.next();
+    	    
+    	}while(true);
 	}
 
 	/**
@@ -63,8 +174,9 @@ public class ConsoleClient
     	{
     		System.out.println("\nLETS TO CONFIGURE THE SOURCE/ORIGIN DATABASE CONNECTION [PRESS ANY KEY]");
     		scanner.nextLine();
+    		jTemplateSource = configureTemplate(jTemplateSource);
     		
-    	}while(!configureTemplate(jTemplateSource));
+    	}while(jTemplateSource == null);
     }
     
     private void configureTarget()
@@ -73,8 +185,9 @@ public class ConsoleClient
     	{
     		System.out.println("\nLETS TO CONFIGURE THE TARGET/DESTINE DATABASE CONNECTION [PRESS ANY KEY]");
     		scanner.nextLine();
+    		jTemplateTarget = configureTemplate(jTemplateTarget);
     		
-    	}while(!configureTemplate(jTemplateTarget));
+    	}while(jTemplateTarget == null);
     }
     
     /**
@@ -84,7 +197,7 @@ public class ConsoleClient
      * @param jTemplate
      * @return true if configuration successfull | false otherwise
      */
-    private boolean configureTemplate(JdbcTemplate jTemplate)
+    private JdbcTemplate configureTemplate(JdbcTemplate jTemplate)
     {
     	String[] params = askConnParams();
     	switch(askDBProvider())
@@ -92,79 +205,28 @@ public class ConsoleClient
     		case "ORACLE":
     			break;
     		case "MySQL":
-    			jTemplateSource = connUtils.getMySQLJDBCTemplate(params[3], 
+    			jTemplate = connUtils.getMySQLJDBCTemplate(params[3], 
     					params[4], params[0], params[1], params[2]);
     			break;
     		default:
     			System.err.println("Unsupported database provider");
-    			return false;
+    			return null;
     	}
     	
-	    return connUtils.isValidTemplate(jTemplateSource);
+	    return (connUtils.isValidTemplate(jTemplate)) ? jTemplate : null;
     }
     
     /**
-     * Shows a menu asking to user his database provider.
-     * @return
+     * Display a list of tables in given jTemplate connection
+     * @param jTemplate
      */
-    private String askDBProvider()
+    private void showTables(JdbcTemplate jTemplate)
     {
-    	int option = -1;
-    	do
-    	{
-    		System.out.println("\nPLEASE SELECT A SUPPORTED DATABASE PROVIDER: ");
-    		System.out.println(" ** 1. Oracle");
-    		System.out.println(" ** 2. MySQL");
-    		System.out.println(" ** 3. HSQLDB");
-    		System.out.print("Select: ");
-    		
-    		String selection = scanner.next();
-    		try 
-    		{
-    			option = Integer.parseInt(selection);
-    			if( !(option>=1) && !(option<=3) )
-    			{
-    				option = -1;
-    			}
-    		} 
-    		catch(Exception err) { }
-    	}while(option == -1);
-    	
-    	switch(option)
-    	{
-    		case 1: return "ORACLE";
-    		case 2: return "MySQL";
-    		case 3: return "HSQLDB";
-    		default: return "";
-    	}
-    }
-    
-    /**
-     * Ask for host, port, database, user and password for and database.
-     * 
-     * @return a String array [host, port, database, user, pass]
-     */
-    private String[] askConnParams()
-    {
-    	System.out.println("Please provide required parameters ... ");
-    	
-    	System.out.print("** Database host: ");
-		final String host = scanner.nextLine();
-		
-		System.out.print("** Database port: ");
-		final String port = scanner.nextLine();
-		
-		System.out.print("** Database name: ");
-		final String dbName = scanner.nextLine();
-		
-		System.out.print("** Database username: ");
-		final String username = scanner.nextLine();
-		
-		System.out.print("** Database password: ");
-		final String pass = scanner.nextLine();
-		
-		final String[] params = {host, port, dbName, username, pass};
-		return params;
+        System.out.println("\nTables in Database: ");
+        for(String tableName : jdbCloner.getTablesNames(jTemplate))
+        {
+            System.out.println(" * " + tableName);
+        }
     }
     
 }
