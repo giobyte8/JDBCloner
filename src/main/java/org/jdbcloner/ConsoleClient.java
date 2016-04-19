@@ -1,5 +1,7 @@
 package org.jdbcloner;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.jdbcloner.core.ConnectionUtils;
@@ -26,7 +28,7 @@ public class ConsoleClient
     	System.out.println("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --");
     	
         System.out.println("\n\t             |JDBCLONER| - |DATABASE CLONER|" );
-        System.out.println("\t ... Copy rows, tables or while databases beetwen servers ...");
+        System.out.println("\t ... Copy rows, tables or whole databases beetwen servers ...");
         
         System.out.println("\nFirst you most configure the source/origin\n"
         		+ "and target/destine database connections");
@@ -119,7 +121,12 @@ public class ConsoleClient
     	    System.out.println(" 3. Copy single table structure [Origin to Target]");
     	    System.out.println(" 4. Copy single table structure AND ROWS [Origin to Target]");
     	    System.out.println(" 5. Copy rows from one table [Origin] to another in Destine [Target]");
-    	    
+    	    System.out.println(" 6. Show Schemas in Source/Origin database");
+    	    System.out.println(" 7. Show Schemas in Target/Destine dtabase");
+    	    System.out.println(" 8. Show tables names by Schema in Source/Origin [Only for ORACLE]");
+    	    System.out.println(" 9. Show tables names by Schema in Target/Destine [Only for ORACLE]");
+    	    System.out.println("10. Show rows in a table in Source/Origin database");
+    	    System.out.println("11. Show rows in a table in Target/Destino database");
     	    
     	    System.out.print("Select: ");
     	    switch(scanner.nextInt())
@@ -155,6 +162,30 @@ public class ConsoleClient
     	            
     	            jdbCloner.cloneRows(sourceTable, targetTable, jTemplateSource, jTemplateTarget);
     	            break;
+    	        case 6:
+    	            showSchemas(jTemplateSource);
+    	            break;
+    	        case 7:
+    	            showSchemas(jTemplateTarget);
+    	            break;
+    	        case 8:
+    	            System.out.print("Table name: ");
+    	            String schema = scanner.next();
+    	            showTablesBySchema(jTemplateSource, schema);
+    	            break;
+    	        case 9:
+    	            System.out.print("Table name: ");
+    	            String schema2 = scanner.next();
+    	            showTablesBySchema(jTemplateTarget, schema2);
+    	            break;
+    	        case 10:
+    	            System.out.print("Table name: ");
+    	            String tableName = scanner.next();
+    	            showRowsInTable(jTemplateSource, tableName);
+    	        case 11:
+    	            System.out.print("Table name: ");
+                    String tableN = scanner.next();
+                    showRowsInTable(jTemplateTarget, tableN);
     	        default:
     	            System.out.println("Please select a valid option.");
     	    }
@@ -195,7 +226,7 @@ public class ConsoleClient
      * jdbcTemplate
      * 
      * @param jTemplate
-     * @return true if configuration successfull | false otherwise
+     * @return true if configuration successful | false otherwise
      */
     private JdbcTemplate configureTemplate(JdbcTemplate jTemplate)
     {
@@ -203,6 +234,8 @@ public class ConsoleClient
     	switch(askDBProvider())
     	{
     		case "ORACLE":
+    		    jTemplate = connUtils.getOracleJDBCTemplate(params[3], params[4], 
+    		            params[0], params[1], params[2]);
     			break;
     		case "MySQL":
     			jTemplate = connUtils.getMySQLJDBCTemplate(params[3], 
@@ -226,6 +259,44 @@ public class ConsoleClient
         for(String tableName : jdbCloner.getTablesNames(jTemplate))
         {
             System.out.println(" * " + tableName);
+        }
+    }
+    
+    /**
+     * Display a list of tables in given jTemplate and given Schema [Oracle]
+     * @param jTemplate
+     * @param schemaName
+     */
+    private void showTablesBySchema(JdbcTemplate jTemplate, String schemaName)
+    {
+        System.out.println("\nTables in Database for schema: " + schemaName);
+        for(String table : jdbCloner.getTablesBySchema(jTemplate, schemaName))
+        {
+            System.out.println(" * " + table);
+        }
+    }
+    
+    private void showSchemas(JdbcTemplate jTemplate)
+    {
+        System.out.println("\nSchemas in database");
+        for(String schemaName : jdbCloner.getSchemasNames(jTemplate))
+        {
+            System.out.println(" * " + schemaName);
+        }
+    }
+    
+    private void showRowsInTable(JdbcTemplate jTemplate, String table)
+    {
+        System.out.println("\n\nRows in " + table.toUpperCase());
+        
+        List<String> columns = jdbCloner.getTableColumns(jTemplate, table);
+        for(Map<String, Object> row : jdbCloner.getRowsInTable(jTemplate, table))
+        {
+            for(String column : columns)
+            {
+                System.out.print(row.get(column) + "\t");
+            }
+            System.out.println("\n");
         }
     }
     

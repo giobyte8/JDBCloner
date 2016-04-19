@@ -141,6 +141,62 @@ public class JDBCloner
 		
 		return tablesNames;
 	}
+	
+	public List<String> getTablesBySchema(JdbcTemplate jdbcTemplate, String schema)
+	{
+	    List<String> tables = new ArrayList<String>();
+	    
+	    try
+	    {
+	        DatabaseMetaData metadata = jdbcTemplate.getDataSource().getConnection().getMetaData();
+	        ResultSet rs = metadata.getTables(null, "GES_VIN", null, null);
+	        while(rs.next())
+	        {
+	            tables.add(rs.getString(3));
+	        }
+	        
+	        rs.close();
+	        metadata.getConnection().close();
+	    }
+	    catch(SQLException e)
+	    {
+	        System.err.println("Error ocurred while accessing tables names by schema");
+	        e.printStackTrace();
+	    }
+	    
+	    return tables;
+	}
+	
+	/**
+	 * Gets a list of schemas in database used by JDBCTemplate
+	 * 
+	 * @param jdbcTemplate
+	 * @return <code>java.util.List</code> with schemas Names
+	 */
+	public List<String> getSchemasNames(JdbcTemplate jdbcTemplate)
+	{
+	    List<String> schemasNames = new ArrayList<String>();
+	    
+	    try
+	    {
+	        DatabaseMetaData metadata = jdbcTemplate.getDataSource().getConnection().getMetaData();
+	        ResultSet rs = metadata.getSchemas();
+	        while(rs.next())
+	        {
+	            schemasNames.add(rs.getString(1));
+	        }
+	        
+	        rs.close();
+	        metadata.getConnection().close();
+	    }
+	    catch(SQLException e)
+	    {
+	        System.err.println("Error ocurred while accessing schemas names");
+	        e.printStackTrace();
+	    }
+	    
+	    return schemasNames;
+	}
 
 	/**
 	 * Counts the rows in given table.
@@ -187,5 +243,17 @@ public class JDBCloner
             e.printStackTrace();
             return null;
         }
+	}
+	
+	/**
+	 * Get all the rows in given table
+	 * 
+	 * @param jdbcTemplate
+	 * @param table
+	 * @return
+	 */
+	public List<Map<String, Object>> getRowsInTable(JdbcTemplate jdbcTemplate, String table)
+	{
+	    return jdbcTemplate.queryForList("SELECT * FROM " + table);
 	}
 }

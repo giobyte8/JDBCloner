@@ -13,7 +13,8 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
  */
 public class ConnectionUtils 
 {
-	private final String MYSQL_DRIVER_CLASSNAME = "com.mysql.jdbc.Driver";
+	private final String MYSQL_DRIVER_CLASSNAME  = "com.mysql.jdbc.Driver";
+	private final String ORACLE_DRIVER_CLASSNAME = "oracle.jdbc.driver.OracleDriver";
 	
 	
 	/**
@@ -38,7 +39,28 @@ public class ConnectionUtils
 	}
 	
 	/**
-	 * Creates a DataSource with given parameters
+	 * Creates a new Spring JDBCTemplate and configure its DataSource
+	 * with a Oracle Database
+	 * 
+	 * @param user User to connect with database
+     * @param pass Password to create connection
+     * @param host IP or host name from MySQL Server
+     * @param port MySQL Server port
+     * @param database Database to connect name
+     * 
+	 * @return Spring JDBCTemplate configured with DataSource
+	 */
+	public JdbcTemplate getOracleJDBCTemplate(final String user, final String pass,
+            final String host, final String port, final String database)
+    {
+	    DriverManagerDataSource dSource = getOracleDataSource(user, pass, host, port, database);
+	    JdbcTemplate jdbcTemplate = new JdbcTemplate(dSource);
+	    
+	    return jdbcTemplate;
+    }
+	
+	/**
+	 * Creates a DataSource with given parameters to a MySQL Database
 	 * 
 	 * @param user User to connect with database
 	 * @param pass Password to create connection
@@ -65,6 +87,35 @@ public class ConnectionUtils
 		dataSource.setPassword(pass);
 		
 		return dataSource;
+	}
+	
+	/**
+	 * Creates a DataSource with given params to an Oracle Database
+	 * 
+	 * @param username
+	 * @param password
+	 * @param host
+	 * @param port
+	 * @param database
+	 * @return
+	 */
+	public DriverManagerDataSource getOracleDataSource(final String username, final String password,
+	        final String host, final String port, final String database)
+	{
+	    StringBuilder DB_URL = new StringBuilder("jdbc:oracle:thin:@")
+	        .append(host)
+	        .append(":")
+	        .append(port)
+	        .append(":")
+	        .append(database);
+	    
+	    DriverManagerDataSource dataSource = new DriverManagerDataSource();
+	    dataSource.setDriverClassName(ORACLE_DRIVER_CLASSNAME);
+	    dataSource.setUrl(DB_URL.toString());
+	    dataSource.setUsername(username);
+	    dataSource.setPassword(password);
+	        
+	    return dataSource;
 	}
 
 	/**
