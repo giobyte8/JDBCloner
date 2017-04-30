@@ -16,7 +16,5 @@ beetween diferent or same RDBMSs.
   <li>MySQL</li>
 </ul>
 
-<h2>Contributors</h2>
-<ul>
-  <li>Giovanni Aguirre | <a href="https://twitter.com/DiganmeGiovanni">@DignameGiovanni</a></li>
-</ul>
+## Contributors
+* Giovanni Aguirre | [@DiganmeGiovanni](https://github.com/DiganmeGiovanni)
